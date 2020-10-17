@@ -1,7 +1,11 @@
 import 'package:flutter/material.dart';
 import "package:provider/provider.dart";
+import 'package:shop_app/Screens/cartScreen.dart';
+import 'package:shop_app/Screens/orderScreen.dart';
 import 'package:shop_app/Screens/productDetailsScreen.dart';
 import 'package:shop_app/Screens/productOverviewScreen.dart';
+import 'package:shop_app/providers/cartProvider.dart';
+import 'package:shop_app/providers/ordersProvider.dart';
 import 'package:shop_app/providers/productsProvider.dart';
 
 void main() => runApp(MyApp());
@@ -9,19 +13,33 @@ void main() => runApp(MyApp());
 class MyApp extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
-    // We wrap our MaterialApp widget with our ChangeNotifierProvider so we can attach the store to ds component
-    return ChangeNotifierProvider(
-      create: (BuildContext context) =>
-          ProductsProvider(), // we call d create method from which we return our store/Provider class so now we can setup a listener in another widget and from there access the store
+    // We wrap our MaterialApp widget with multiple providers (cart and product provider)
+    return MultiProvider(
+      providers: [
+        //product provider
+        ChangeNotifierProvider.value(
+          value: ProductsProvider(),
+        ),
+        //cart provider
+        ChangeNotifierProvider.value(
+          value: CartProvider(),
+        ),
+        ChangeNotifierProvider.value(
+          value: OrderProvider(),
+        )
+      ],
       child: MaterialApp(
-        title: 'MyShop',
+        debugShowCheckedModeBanner: false,
+        title: 'SLOT',
         theme: ThemeData(
-            primarySwatch: Colors.purple,
-            accentColor: Colors.deepOrange,
+            primarySwatch: Colors.red,
+            accentColor: Colors.redAccent,
             fontFamily: "Lato"),
         home: ProductsOverviewScreen(),
         routes: {
-          ProductDetailScreen.routeName: (context) => ProductDetailScreen()
+          ProductDetailScreen.routeName: (context) => ProductDetailScreen(),
+          CartScreen.routeName: (context) => CartScreen(),
+          OrderScreen.routeName: (context) => OrderScreen(),
         },
       ),
     );
