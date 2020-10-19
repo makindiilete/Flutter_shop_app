@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:shop_app/Screens/orderScreen.dart';
+import 'package:shop_app/Screens/userProductsScreen.dart';
 
 class AppDrawer extends StatelessWidget {
   @override
@@ -12,7 +13,7 @@ class AppDrawer extends StatelessWidget {
             automaticallyImplyLeading:
                 false, // ds is added so that when we open the menu, we do not have another menu icon on the sidebar
           ),
-          Divider(),
+//          Divider(),
           ListTile(
             leading: Icon(Icons.shop),
             title: Text("Shop"),
@@ -26,6 +27,14 @@ class AppDrawer extends StatelessWidget {
             //on tap of the icon, we navigate to the orders page
             onTap: () => Navigator.of(context)
                 .pushReplacementNamed(OrderScreen.routeName),
+          ),
+          Divider(),
+          ListTile(
+            leading: Icon(Icons.edit),
+            title: Text("Manage Products"),
+            //on tap of the icon, we navigate to the userProductsScreen page
+            onTap: () => Navigator.of(context)
+                .pushReplacementNamed(UserProductsScreen.routeName),
           )
         ],
       ),

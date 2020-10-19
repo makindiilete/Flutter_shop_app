@@ -64,8 +64,16 @@ class ProductsProvider with ChangeNotifier {
   }
 
   // we call ds method to add a new product we receive outside
-  void addProduct() {
-//    _items.add(value);  // we add d product here
+  void addProduct(Product product) {
+    final newProduct = Product(
+        price: product.price,
+        imageUrl: product.imageUrl,
+        description: product.description,
+        title: product.title,
+        isFavorite: false,
+        id: DateTime.now().toString());
+    _items.add(product); // we add d product here (adds to the end)
+    //  _items.insert(0, product); // add the product to the beginning of the list
     notifyListeners(); // we then notify all components connected to ds provider (store) of the new change so they can rebuild their list
   }
 
@@ -76,6 +84,26 @@ class ProductsProvider with ChangeNotifier {
     // if 'isFavorite' is true, set it to false, else set it to true
     favorite.isFavorite = !favorite.isFavorite;
     // notify all subscribers of the change
+    notifyListeners();
+  }
+
+  // ds method updates an existing product
+  void updateProduct(String id, Product newProduct) {
+    //find d index of d product with the given id
+    var productIndex = _items.indexWhere((product) => product.id == id);
+    // if the product cannot be found then its index will be -1
+    if (productIndex >= 0) {
+      _items[productIndex] = newProduct;
+      notifyListeners();
+    } else {
+      print("Product not found");
+    }
+  }
+
+  //ds method delete a product from the list
+  void deleteProduct(String id) {
+    //find the product with the given id
+    _items.removeWhere((product) => product.id == id);
     notifyListeners();
   }
 }

@@ -1,3 +1,6 @@
+import 'dart:io';
+
+import 'package:flutter/cupertino.dart';
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
 import 'package:provider/provider.dart';
@@ -13,6 +16,46 @@ class CartItem extends StatelessWidget {
   CartItem({this.id, this.price, this.quantity, this.title, this.imgUrl});
   @override
   Widget build(BuildContext context) {
+    final dialogWidget = Platform.isIOS
+        ? CupertinoAlertDialog(
+            title: Text(
+              "Are you sure?",
+              textAlign: TextAlign.center,
+            ),
+            content: Text("Do you want to remove the item from the cart?"),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                child: Text("No"),
+              ),
+              FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+                child: Text("Yes"),
+              )
+            ],
+          )
+        : AlertDialog(
+            title: Text("Are you sure?"),
+            content: Text("Do you want to remove the item from the cart?"),
+            actions: <Widget>[
+              FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop(false);
+                },
+                child: Text("No"),
+              ),
+              FlatButton(
+                onPressed: () {
+                  Navigator.of(context).pop(true);
+                },
+                child: Text("Yes"),
+              )
+            ],
+          );
     final nigeriaNaira =
         new NumberFormat.currency(locale: "en_NG", symbol: "₦");
     return
@@ -77,6 +120,11 @@ class CartItem extends StatelessWidget {
       direction: DismissDirection
           .endToStart, // ds ensure we cant swipe on both edge to delete but only from right to left
       // we call d onDismissed method to remove the product from the list when we swipe right to left
+      //here we want to confirm if d user really want to dismiss an item from the cart list
+      confirmDismiss: (direction) {
+        //Here we render a dialog for the user to confirm the action they want to do
+        return showDialog(context: context, builder: (context) => dialogWidget);
+      },
       onDismissed: (direction) {
 //        if(direction == DismissDirection.endToStart){} // u can check for d direction user swipes if swiping from both direction is possible
         final cart = Provider.of<CartProvider>(context);

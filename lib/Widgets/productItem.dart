@@ -57,6 +57,22 @@ class ProductItem extends StatelessWidget {
               ),
               onPressed: () {
                 cart.addProductToCart(id, price, title, imageUrl);
+//                using scaffold ds way, we establish connection to d nearest scaffold widget dt controls d page we are seeing which is the product overview scaffold where we r calling d product item. (even though ds productItem immediate parent is productGrid bt there is no scaffold widget inside productGrid so we go higher to d overall parent which is productOverviewScreen)..
+                // ds remove the previous snackBar in other to quickly show the next one in case we are adding products rapidly
+                Scaffold.of(context).hideCurrentSnackBar();
+                //if we have a scaffold already dt is creating a screen inside ds widget then ds will not work
+                Scaffold.of(context).showSnackBar(SnackBar(
+                  content: Text(
+                    "Item Added To Cart!",
+                    textAlign: TextAlign.center,
+                  ), // d widget we want to show in the popup
+                  duration: Duration(
+                      seconds: 2), //how long d popup will show b4 dismiss
+                  action: SnackBarAction(
+                      label: "UNDO",
+                      onPressed: () => cart.undoItemCartAddition(
+                          id)), //we can also offer user an action like UNDO to undo the action
+                )); // we can call d 'Scaffold.of(context).openDrawer();' onCLick of d cart icon if the nearest scaffold do av a drawer and product overview does
               }), // widget to display after the title tet
         ),
       ),

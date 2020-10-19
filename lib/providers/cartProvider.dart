@@ -66,6 +66,25 @@ class CartProvider with ChangeNotifier {
     notifyListeners();
   }
 
+  // ds method is called to remove the recently added item from cart, we cannot use the removeItem() above bcos we want to be able to first see if we can reduce quantity and not just remove d item in total
+  void undoItemCartAddition(String productId) {
+    var itemToRemove =
+        _items.firstWhere((item) => item.cartItemId == productId);
+    // if the item to be removed is not in cart, we return doing nothing
+    if (!_items.contains(itemToRemove)) {
+      return;
+    }
+    // else if the item is present but the quantity is more than one, we reduce the quantity
+    else if (itemToRemove.cartItemQuantity > 1) {
+      itemToRemove.cartItemQuantity = itemToRemove.cartItemQuantity - 1;
+    }
+    // if the quantity is not more than one, we remove the item in total
+    else {
+      _items.removeWhere((item) => item.cartItemId == productId);
+    }
+    notifyListeners();
+  }
+
   //ds method will be called to clear all items in the cart when we click on the order button to place an order
   void clear() {
     _items = [];
