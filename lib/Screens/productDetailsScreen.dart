@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:money2/money2.dart';
 import 'package:provider/provider.dart';
 import 'package:shop_app/providers/productsProvider.dart';
 
@@ -20,6 +21,11 @@ class ProductDetailScreen extends StatelessWidget {
 
     final nigeriaNaira =
         new NumberFormat.currency(locale: "en_NG", symbol: "₦");
+
+    final Currency naira =
+        Currency.create('NGN', 0, symbol: '₦', pattern: 'S0');
+    Money nairaPrice = Money.fromInt(1099, naira);
+
     return Scaffold(
       appBar: AppBar(
         title: Text(loadedProduct
@@ -40,8 +46,9 @@ class ProductDetailScreen extends StatelessWidget {
             SizedBox(
               height: 20,
             ),
+//            Text("$Money.from(loadedProduct.price, naira)",
             Text(
-              nigeriaNaira.format(loadedProduct.price),
+              "${Money.from(loadedProduct.price, naira)}",
               style: TextStyle(color: Colors.grey, fontSize: 20),
             ),
             SizedBox(

@@ -7,6 +7,12 @@ import 'package:shop_app/providers/productsProvider.dart';
 
 class UserProductsScreen extends StatelessWidget {
   static const routeName = "/user-products";
+
+  // ds is async function dt is called when we pull to refresh
+  _refreshProducts(BuildContext context) async {
+    await Provider.of<ProductsProvider>(context).fetchAndSetProducts();
+  }
+
   @override
   Widget build(BuildContext context) {
     //access to ProductsProvider/ product store
@@ -23,20 +29,26 @@ class UserProductsScreen extends StatelessWidget {
         ],
       ),
       drawer: AppDrawer(),
-      body: Padding(
-        padding: EdgeInsets.all(8),
-        child: ListView.builder(
-          itemBuilder: (context, index) => Column(
-            children: <Widget>[
-              ProductList(
-                title: product.getProducts()[index].title,
-                imageUrl: product.getProducts()[index].imageUrl,
-                id: product.getProducts()[index].id,
-              ),
-              Divider()
-            ],
+      body:
+          // we wrap our widget with RefreshIndicator() dt gives us pull to refresh
+          RefreshIndicator(
+        // onRefresh calls an async function defined in the providers class dt fetch all products
+        onRefresh: () => _refreshProducts(context),
+        child: Padding(
+          padding: EdgeInsets.all(8),
+          child: ListView.builder(
+            itemBuilder: (context, index) => Column(
+              children: <Widget>[
+                ProductList(
+                  title: product.getProducts()[index].title,
+                  imageUrl: product.getProducts()[index].imageUrl,
+                  id: product.getProducts()[index].id,
+                ),
+                Divider()
+              ],
+            ),
+            itemCount: product.getProducts().length,
           ),
-          itemCount: product.getProducts().length,
         ),
       ),
     );

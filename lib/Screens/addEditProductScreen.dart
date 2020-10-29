@@ -35,12 +35,8 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     'price': '',
     'imageUrl': '',
   };
-  // here we setup a listener to listen to value typed into our imageURL input field
-  @override
-  void initState() {
-    _imageUrlFocusNode.addListener(
-        _updateImageUrl); // we setup listener to the _updateImageUrl()
-  }
+  //we set this to true on form submission async call to the backend
+  var _isLoading = false;
 
   @override
   void didChangeDependencies() {
@@ -97,7 +93,7 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
   }
 
   // ds method will be called to save our form
-  void _saveForm() {
+  _saveForm() async {
     //we validate all form fields and returns true if there are no errors
     final isValid = _form.currentState.validate();
     // if validator returns false, it means there are errors and we simply want to return
@@ -107,18 +103,52 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
     // else if isValid is true, it means there are no errors so we can save the form...
     // we call our form using the _form property we have attached to it and call the save() method
     _form.currentState.save();
+//    we set isLoading to true once we start form submission
+    setState(() {
+      _isLoading = true; //we show loading spinner when submitting our form
+    });
     // we run a check maybe we are adding a new product (id will be null) or we are editing an existing product
     //editing
     if (_editedProduct.id != null) {
-      Provider.of<ProductsProvider>(context)
+      await Provider.of<ProductsProvider>(context)
           .updateProduct(_editedProduct.id, _editedProduct);
     }
     //adding
     else {
-      Provider.of<ProductsProvider>(context).addProduct(_editedProduct);
+      //we try to add a product
+      try {
+        await Provider.of<ProductsProvider>(context).addProduct(_editedProduct);
+      }
+      // if an error occur, we catch it
+      catch (error) {
+        await showDialog(
+            context: context,
+            builder: (context) => AlertDialog(
+                  title: Text("An Error Occurred!"),
+                  content: Text("Something Went Wrong!"),
+                  actions: <Widget>[
+                    FlatButton(
+                      child: Text("Okay"),
+                      onPressed: () {
+                        Navigator.of(context).pop();
+                      },
+                    )
+                  ],
+                ));
+      }
+/*      // whether we succeed or fail, we update the state to remove the loader and pop off the current screen
+       finally {
+        setState(() {
+          _isLoading = false;
+        });
+        Navigator.of(context).pop();
+      }*/
     }
-    Navigator.of(context)
-        .pop(); // d pop off ds page and return to the previous page
+
+    setState(() {
+      _isLoading = false;
+    });
+    Navigator.of(context).pop();
   }
 
   @override
@@ -130,172 +160,185 @@ class _AddEditProductScreenState extends State<AddEditProductScreen> {
           IconButton(icon: Icon(Icons.save), onPressed: _saveForm)
         ],
       ),
-      body: Padding(
-        child: Form(
-            key:
-                _form, // we bind our form to the '_form' property we created above
-            child: ListView(
-              children: <Widget>[
-                // TITLE
-                TextFormField(
-                  initialValue: _initValues[
-                      'title'], // we set our initial values for this field to take the value of the 'title' field of our _initValues object
-                  decoration: InputDecoration(
-                      labelText: 'Title'), //'labelText' : is our input label
-                  //ds describe what the Enter button will do after entering text inside d input, next means it will move to the next input field
-                  textInputAction: TextInputAction.next,
-                  // ds fires when we click the Enter/Next/Done button on the Title input field and it moves us down to the Price input field using its focusNode property declared above
-                  onFieldSubmitted: (inputValue) {
-                    FocusScope.of(context).requestFocus(_priceFocusNode);
-                  },
-                  // title field form validation: -  it checks if d input field is empty and return an error message else it returns null which means check is passed
-                  validator: (value) {
-                    if (value.isEmpty) {
-                      return "Please Enter A Title";
-                    }
-                    return null;
-                  },
-                  // onSaved method of the form will keep all existing values of d form and replace the value of the title field with the user input here
-                  onSaved: (value) {
-                    _editedProduct = Product(
-                        title: value,
-                        description: _editedProduct.description,
-                        id: _editedProduct.id,
-                        imageUrl: _editedProduct.imageUrl,
-                        price: _editedProduct.price,
-                        isFavorite: _editedProduct.isFavorite);
-                  },
-                ),
-                //PRICE
-                TextFormField(
-                  initialValue: _initValues['price'],
-                  decoration: InputDecoration(labelText: 'Price'),
-                  textInputAction: TextInputAction.next,
-                  keyboardType: TextInputType
-                      .number, // d keyboard will display number only bcos we want to enter product price here
-                  focusNode:
-                      _priceFocusNode, // we set the focus of this input field to the property we created above
-                  onFieldSubmitted: (inputValue) {
-                    FocusScope.of(context).requestFocus(_descriptionFocusNode);
-                  },
-                  validator: (value) {
-                    //if d price field is empty
-                    if (value.isEmpty) {
-                      return "Please Enter A Price";
-                    }
-                    // we try to convert the value to double, that returns null if it fails
-                    if (double.tryParse(value) == null) {
-                      return "Please Enter A Valid Number";
-                    }
-                    //zero validation
-                    if (double.parse(value) <= 0) {
-                      return "Please Enter A Number Greater Than Zero";
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _editedProduct = Product(
-                        title: _editedProduct.title,
-                        description: _editedProduct.description,
-                        id: _editedProduct.id,
-                        imageUrl: _editedProduct.imageUrl,
-                        price: double.parse(value),
-                        isFavorite: _editedProduct.isFavorite);
-                  },
-                ),
-                //DESCRIPTION
-                TextFormField(
-                  initialValue: _initValues['description'],
-
-                  decoration: InputDecoration(labelText: 'Description'),
-                  maxLines:
-                      3, //ds will convert the input field to textArea field for longer text
-                  keyboardType: TextInputType
-                      .multiline, //ds gives us a keyboard suitable for multiline text so when the Enter/Done button is pressed, it takes d cursor to the next line
-                  focusNode: _descriptionFocusNode,
-                  validator: (value) {
-                    if (value.isEmpty) {
-                      return "Please Enter A Description";
-                    }
-                    if (value.length < 10) {
-                      return "Description Should Be At least 10 Characters";
-                    }
-                    return null;
-                  },
-                  onSaved: (value) {
-                    _editedProduct = Product(
-                        title: _editedProduct.title,
-                        description: value,
-                        id: _editedProduct.id,
-                        imageUrl: _editedProduct.imageUrl,
-                        price: _editedProduct.price,
-                        isFavorite: _editedProduct.isFavorite);
-                  },
-                ),
-                Row(
-                  crossAxisAlignment: CrossAxisAlignment.end,
-                  children: <Widget>[
-                    //ds container shows d image preview
-                    Container(
-                      width: 100,
-                      height: 100,
-                      margin: EdgeInsets.only(top: 8, right: 10),
-                      decoration: BoxDecoration(
-                          border: Border.all(width: 1, color: Colors.grey)),
-                      child: _imageURLController.text.isEmpty
-                          ? Text("Enter A URL")
-                          : FittedBox(
-                              child: Image.network(_imageURLController.text),
-                              fit: BoxFit.cover,
-                            ),
-                    ),
-                    Expanded(
-                      child: TextFormField(
-//                        initialValue: _initValues['imageUrl'], we cannot do ds here bcos we are already using a controller so we set it differently in line
-                        decoration: InputDecoration(labelText: 'Image URL'),
-                        keyboardType: TextInputType.url,
-                        textInputAction: TextInputAction
-                            .done, //we add ds bcos its d last input so when we press it, we want to submit the form
-                        controller:
-                            _imageURLController, // u dont need setting up ds with the property above if u do not want to get d value b4 the form is submitted
-                        focusNode: _imageUrlFocusNode,
-//                    when the Enter/Done button is clicked after this input, we call the _saveForm() method to save the form
-                        onFieldSubmitted: (value) {
-                          _saveForm();
-                        },
-                        validator: (value) {
-                          if (value.isEmpty) {
-                            return "Please Enter Image URL.";
-                          }
-                          // checking for valid url (a valid url sud start with either http or https
-                          if (!value.startsWith("http") &&
-                              !value.startsWith("https")) {
-                            return "Please Enter A Valid URL.";
-                          }
-                          if (!value.endsWith("jpg") &&
-                              !value.endsWith("png") &&
-                              !value.endsWith("jpeg")) {
-                            return "Please Enter A Valid Image.";
-                          }
-                          return null;
-                        },
-                        onSaved: (value) {
-                          _editedProduct = Product(
-                              title: _editedProduct.title,
-                              description: _editedProduct.description,
-                              id: _editedProduct.id,
-                              imageUrl: value,
-                              price: _editedProduct.price,
-                              isFavorite: _editedProduct.isFavorite);
-                        },
-                      ),
-                    )
-                  ],
+      body:
+          // if we are calling backend, then isLoading is set to true and we render a progress indicator
+          _isLoading
+              ? Center(
+                  child: CircularProgressIndicator(),
                 )
-              ],
-            )),
-        padding: EdgeInsets.all(16),
-      ),
+              : Padding(
+                  child: Form(
+                      key:
+                          _form, // we bind our form to the '_form' property we created above
+                      child: ListView(
+                        children: <Widget>[
+                          // TITLE
+                          TextFormField(
+                            initialValue: _initValues[
+                                'title'], // we set our initial values for this field to take the value of the 'title' field of our _initValues object
+                            decoration: InputDecoration(
+                                labelText:
+                                    'Title'), //'labelText' : is our input label
+                            //ds describe what the Enter button will do after entering text inside d input, next means it will move to the next input field
+                            textInputAction: TextInputAction.next,
+                            // ds fires when we click the Enter/Next/Done button on the Title input field and it moves us down to the Price input field using its focusNode property declared above
+                            onFieldSubmitted: (inputValue) {
+                              FocusScope.of(context)
+                                  .requestFocus(_priceFocusNode);
+                            },
+                            // title field form validation: -  it checks if d input field is empty and return an error message else it returns null which means check is passed
+                            validator: (value) {
+                              if (value.isEmpty) {
+                                return "Please Enter A Title";
+                              }
+                              return null;
+                            },
+                            // onSaved method of the form will keep all existing values of d form and replace the value of the title field with the user input here
+                            onSaved: (value) {
+                              _editedProduct = Product(
+                                  title: value,
+                                  description: _editedProduct.description,
+                                  id: _editedProduct.id,
+                                  imageUrl: _editedProduct.imageUrl,
+                                  price: _editedProduct.price,
+                                  isFavorite: _editedProduct.isFavorite);
+                            },
+                          ),
+                          //PRICE
+                          TextFormField(
+                            initialValue: _initValues['price'],
+                            decoration: InputDecoration(labelText: 'Price'),
+                            textInputAction: TextInputAction.next,
+                            keyboardType: TextInputType
+                                .number, // d keyboard will display number only bcos we want to enter product price here
+                            focusNode:
+                                _priceFocusNode, // we set the focus of this input field to the property we created above
+                            onFieldSubmitted: (inputValue) {
+                              FocusScope.of(context)
+                                  .requestFocus(_descriptionFocusNode);
+                            },
+                            validator: (value) {
+                              //if d price field is empty
+                              if (value.isEmpty) {
+                                return "Please Enter A Price";
+                              }
+                              // we try to convert the value to double, that returns null if it fails
+                              if (double.tryParse(value) == null) {
+                                return "Please Enter A Valid Number";
+                              }
+                              //zero validation
+                              if (double.parse(value) <= 0) {
+                                return "Please Enter A Number Greater Than Zero";
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _editedProduct = Product(
+                                  title: _editedProduct.title,
+                                  description: _editedProduct.description,
+                                  id: _editedProduct.id,
+                                  imageUrl: _editedProduct.imageUrl,
+                                  price: double.parse(value),
+                                  isFavorite: _editedProduct.isFavorite);
+                            },
+                          ),
+                          //DESCRIPTION
+                          TextFormField(
+                            initialValue: _initValues['description'],
+
+                            decoration:
+                                InputDecoration(labelText: 'Description'),
+                            maxLines:
+                                3, //ds will convert the input field to textArea field for longer text
+                            keyboardType: TextInputType
+                                .multiline, //ds gives us a keyboard suitable for multiline text so when the Enter/Done button is pressed, it takes d cursor to the next line
+                            focusNode: _descriptionFocusNode,
+                            validator: (value) {
+                              if (value.isEmpty) {
+                                return "Please Enter A Description";
+                              }
+                              if (value.length < 10) {
+                                return "Description Should Be At least 10 Characters";
+                              }
+                              return null;
+                            },
+                            onSaved: (value) {
+                              _editedProduct = Product(
+                                  title: _editedProduct.title,
+                                  description: value,
+                                  id: _editedProduct.id,
+                                  imageUrl: _editedProduct.imageUrl,
+                                  price: _editedProduct.price,
+                                  isFavorite: _editedProduct.isFavorite);
+                            },
+                          ),
+                          Row(
+                            crossAxisAlignment: CrossAxisAlignment.end,
+                            children: <Widget>[
+                              //ds container shows d image preview
+                              Container(
+                                width: 100,
+                                height: 100,
+                                margin: EdgeInsets.only(top: 8, right: 10),
+                                decoration: BoxDecoration(
+                                    border: Border.all(
+                                        width: 1, color: Colors.grey)),
+                                child: _imageURLController.text.isEmpty
+                                    ? Text("Enter A URL")
+                                    : FittedBox(
+                                        child: Image.network(
+                                            _imageURLController.text),
+                                        fit: BoxFit.cover,
+                                      ),
+                              ),
+                              Expanded(
+                                child: TextFormField(
+//                        initialValue: _initValues['imageUrl'], we cannot do ds here bcos we are already using a controller so we set it differently in line
+                                  decoration:
+                                      InputDecoration(labelText: 'Image URL'),
+                                  keyboardType: TextInputType.url,
+                                  textInputAction: TextInputAction
+                                      .done, //we add ds bcos its d last input so when we press it, we want to submit the form
+                                  controller:
+                                      _imageURLController, // u dont need setting up ds with the property above if u do not want to get d value b4 the form is submitted
+                                  focusNode: _imageUrlFocusNode,
+//                    when the Enter/Done button is clicked after this input, we call the _saveForm() method to save the form
+                                  onFieldSubmitted: (value) {
+                                    _saveForm();
+                                  },
+                                  validator: (value) {
+                                    if (value.isEmpty) {
+                                      return "Please Enter Image URL.";
+                                    }
+                                    // checking for valid url (a valid url sud start with either http or https
+                                    if (!value.startsWith("http") &&
+                                        !value.startsWith("https")) {
+                                      return "Please Enter A Valid URL.";
+                                    }
+                                    if (!value.endsWith("jpg") &&
+                                        !value.endsWith("png") &&
+                                        !value.endsWith("jpeg")) {
+                                      return "Please Enter A Valid Image.";
+                                    }
+                                    return null;
+                                  },
+                                  onSaved: (value) {
+                                    _editedProduct = Product(
+                                        title: _editedProduct.title,
+                                        description: _editedProduct.description,
+                                        id: _editedProduct.id,
+                                        imageUrl: value,
+                                        price: _editedProduct.price,
+                                        isFavorite: _editedProduct.isFavorite);
+                                  },
+                                ),
+                              )
+                            ],
+                          )
+                        ],
+                      )),
+                  padding: EdgeInsets.all(16),
+                ),
     );
   }
 }

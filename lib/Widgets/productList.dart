@@ -14,6 +14,8 @@ class ProductList extends StatelessWidget {
   ProductList({this.title, this.imageUrl, this.id});
   @override
   Widget build(BuildContext context) {
+    final scaffold = Scaffold.of(context);
+    final navigator = Navigator.of(context);
     final dialogWidget = Platform.isIOS
         ? CupertinoAlertDialog(
             title: Text(
@@ -29,18 +31,33 @@ class ProductList extends StatelessWidget {
                 child: Text("No"),
               ),
               FlatButton(
-                onPressed: () {
-                  Provider.of<ProductsProvider>(context).deleteProduct(id);
-                  Scaffold.of(context).hideCurrentSnackBar();
-                  Scaffold.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                      "Product Successfully Deleted",
-                      textAlign: TextAlign.center,
-                    ), // d widget we want to show in the popup
-                    duration: Duration(
-                        seconds: 2), //how long d popup will show b4 dismiss
-                  ));
-                  Navigator.of(context).pop();
+                onPressed: () async {
+                  try {
+                    await Provider.of<ProductsProvider>(context)
+                        .deleteProduct(id);
+                    scaffold.hideCurrentSnackBar();
+                    scaffold.showSnackBar(SnackBar(
+                      content: Text(
+                        "Product Successfully Deleted",
+                        textAlign: TextAlign.center,
+                      ), // d widget we want to show in the popup
+                      duration: Duration(
+                          seconds: 2), //how long d popup will show b4 dismiss
+                    ));
+                    navigator.pop();
+                  } catch (error) {
+                    //here we will no longer have access to the "Scaffold.of(context) & Navigator.of(context)" so we need to use the declared variables on line 17 & 18
+                    scaffold.hideCurrentSnackBar();
+                    scaffold.showSnackBar(SnackBar(
+                      content: Text(
+                        "Deleting Failed!",
+                        textAlign: TextAlign.center,
+                      ), // d widget we want to show in the popup
+                      duration: Duration(
+                          seconds: 2), //how long d popup will show b4 dismiss
+                    ));
+                    navigator.pop();
+                  }
                 },
                 child: Text("Yes"),
               )
@@ -57,18 +74,33 @@ class ProductList extends StatelessWidget {
                 child: Text("No"),
               ),
               FlatButton(
-                onPressed: () {
-                  Provider.of<ProductsProvider>(context).deleteProduct(id);
-                  Scaffold.of(context).hideCurrentSnackBar();
-                  Scaffold.of(context).showSnackBar(SnackBar(
-                    content: Text(
-                      "Product Successfully Deleted",
-                      textAlign: TextAlign.center,
-                    ), // d widget we want to show in the popup
-                    duration: Duration(
-                        seconds: 2), //how long d popup will show b4 dismiss
-                  ));
-                  Navigator.of(context).pop();
+                onPressed: () async {
+                  try {
+                    await Provider.of<ProductsProvider>(context)
+                        .deleteProduct(id);
+                    scaffold.hideCurrentSnackBar();
+                    scaffold.showSnackBar(SnackBar(
+                      content: Text(
+                        "Product Successfully Deleted",
+                        textAlign: TextAlign.center,
+                      ), // d widget we want to show in the popup
+                      duration: Duration(
+                          seconds: 2), //how long d popup will show b4 dismiss
+                    ));
+                    navigator.pop();
+                  } catch (error) {
+                    //here we will no longer have access to the "Scaffold.of(context) & Navigator.of(context)" so we need to use the declared variables on line 17 & 18
+                    scaffold.hideCurrentSnackBar();
+                    scaffold.showSnackBar(SnackBar(
+                      content: Text(
+                        "Deleting Failed!",
+                        textAlign: TextAlign.center,
+                      ), // d widget we want to show in the popup
+                      duration: Duration(
+                          seconds: 2), //how long d popup will show b4 dismiss
+                    ));
+                    navigator.pop();
+                  }
                 },
                 child: Text("Yes"),
               )

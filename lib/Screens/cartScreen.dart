@@ -5,10 +5,14 @@ import 'package:shop_app/Widgets/cartItem.dart';
 import 'package:shop_app/providers/cartProvider.dart';
 import 'package:shop_app/providers/ordersProvider.dart';
 
-class CartScreen extends StatelessWidget {
-  static const routeName =
-      "/cart"; // d name components will call to navigate to this route
+class CartScreen extends StatefulWidget {
+  static const routeName = "/cart";
+  @override
+  _CartScreenState createState() => _CartScreenState();
+}
 
+class _CartScreenState extends State<CartScreen> {
+  var _isLoading = false;
   @override
   Widget build(BuildContext context) {
     final cart = Provider.of<CartProvider>(context);
@@ -72,16 +76,49 @@ class CartScreen extends StatelessWidget {
                             ),
                             FlatButton(
 //                              on click of the ORDER NOW button, we call d addOrder button and pass list of our cart items and d total amount
-                                onPressed: () {
-                                  order.addOrder(cart.getCartItems(),
-                                      cart.getTotalAmount());
-                                  cart.clear(); // we clear our cart after placing the order
+                                onPressed: () async {
+                                  setState(() {
+                                    _isLoading = true;
+                                  });
+                                  // we try to place the order on the server
+                                  try {
+                                    await order.addOrder(cart.getCartItems(),
+                                        cart.getTotalAmount());
+                                    cart.clear(); // we clear our cart after placing the order
+                                  }
+                                  // if we get an error, we catch it and display notification
+                                  catch (error) {
+                                    await showDialog(
+                                        context: context,
+                                        builder: (context) => AlertDialog(
+                                              title: Text("An Error Occurred!"),
+                                              content:
+                                                  Text("Something Went Wrong!"),
+                                              actions: <Widget>[
+                                                FlatButton(
+                                                  child: Text("Okay"),
+                                                  onPressed: () {
+                                                    Navigator.of(context).pop();
+                                                  },
+                                                )
+                                              ],
+                                            ));
+                                  }
+                                  // whether we are successful or not, we reset the loading icon to false
+                                   finally {
+                                    setState(() {
+                                      _isLoading = false;
+                                    });
+                                  }
                                 },
-                                child: Text(
-                                  "ORDER NOW",
-                                  style: TextStyle(
-                                      color: Theme.of(context).primaryColor),
-                                ))
+                                child: _isLoading
+                                    ? CircularProgressIndicator()
+                                    : Text(
+                                        "ORDER NOW",
+                                        style: TextStyle(
+                                            color:
+                                                Theme.of(context).primaryColor),
+                                      ))
                           ],
                         ),
                       ),

@@ -2,6 +2,7 @@ import 'dart:math';
 
 import 'package:flutter/material.dart';
 import 'package:intl/intl.dart';
+import 'package:money2/money2.dart';
 import 'package:shop_app/model/order.dart';
 
 class OrderItem extends StatefulWidget {
@@ -17,8 +18,13 @@ class _OrderItemState extends State<OrderItem> {
   var _expanded = false;
   final nigeriaNaira = new NumberFormat.currency(locale: "en_NG", symbol: "₦");
 
+  static final Currency naira =
+      Currency.create('NGN', 0, symbol: '₦', pattern: 'S0');
+  Money nairaPrice = Money.fromInt(1099, naira);
+
   @override
   Widget build(BuildContext context) {
+    print(nairaPrice.toString());
     return
 //      ds will b an expandable card dt we can tap to reveal more content below it and hide again
         Card(
@@ -26,7 +32,7 @@ class _OrderItemState extends State<OrderItem> {
       child: Column(
         children: <Widget>[
           ListTile(
-            title: Text("${nigeriaNaira.format(widget.purchasedOrder.amount)}"),
+            title: Text("${Money.from(widget.purchasedOrder.amount, naira)}"),
             subtitle: Text(DateFormat('dd/MM/yyyy hh:mm')
                 .format(widget.purchasedOrder.dateTime)),
             trailing: IconButton(
@@ -62,7 +68,7 @@ class _OrderItemState extends State<OrderItem> {
                                 softWrap: true,
                               ),
                               Text(
-                                "${nigeriaNaira.format(widget.purchasedOrder.products[index].cartItemPrice)}/ x${widget.purchasedOrder.products[index].cartItemQuantity}",
+                                "${Money.from(widget.purchasedOrder.products[index].cartItemPrice, naira)}/ x${widget.purchasedOrder.products[index].cartItemQuantity}",
                                 style: TextStyle(color: Colors.white),
                                 softWrap: true,
                               )

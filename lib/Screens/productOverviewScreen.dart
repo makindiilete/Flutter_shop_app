@@ -5,6 +5,7 @@ import 'package:shop_app/Widgets/appDrawer.dart';
 import 'package:shop_app/Widgets/badge.dart';
 import 'package:shop_app/Widgets/productGrid.dart';
 import 'package:shop_app/providers/cartProvider.dart';
+import 'package:shop_app/providers/productsProvider.dart';
 
 // we create an enum to create a label for our favorite and all
 enum FilterOptions { Favorites, All }
@@ -16,6 +17,30 @@ class ProductsOverviewScreen extends StatefulWidget {
 
 class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   var _showOnlyFavorite = false; // our state with a boolean property
+  var _isInit = true; // to track our component first load
+  var _isLoading = false;
+
+  @override
+  void didChangeDependencies() {
+    // load d products only when d component first loads
+    if (_isInit) {
+      setState(() {
+        _isLoading = true;
+      });
+      Provider.of<ProductsProvider>(context)
+          .fetchAndSetProducts()
+          .then((response) {
+        setState(() {
+          _isLoading = false;
+        });
+      });
+    }
+    setState(() {
+      _isInit = false;
+    });
+    super.didChangeDependencies();
+  }
+
   @override
   Widget build(BuildContext context) {
 //    final product = Provider.of<ProductsProvider>(context, listen: false);
@@ -83,9 +108,13 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
       ),
       drawer:
           AppDrawer(), // we make the drawer accessible to the overview screen
-      body: ProductsGrid(
-        showFavorite: _showOnlyFavorite,
-      ), // we pass the _showOnlyFav property to ProductsGrid so it can use it to filter the products depending on the boolean value of the props
+      body: _isLoading
+          ? Center(
+              child: CircularProgressIndicator(),
+            )
+          : ProductsGrid(
+              showFavorite: _showOnlyFavorite,
+            ), // we pass the _showOnlyFav property to ProductsGrid so it can use it to filter the products depending on the boolean value of the props
     );
   }
 }

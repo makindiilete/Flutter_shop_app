@@ -16,6 +16,7 @@ class ProductItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final scaffold = Scaffold.of(context);
     //access to ProductsProvider/ product store
     final product = Provider.of<ProductsProvider>(context);
     //access to cartProvider/cart store
@@ -44,8 +45,30 @@ class ProductItem extends StatelessWidget {
                 color: Theme.of(context).accentColor,
               ),
               // onPress, toggle the state of the icon
-              onPressed: () => product.toggleFavoriteStatus(
-                  id)), // widget to display b4 the footer title/text
+              onPressed: () async {
+                try {
+                  await product.toggleFavoriteStatus(id);
+                  scaffold.hideCurrentSnackBar();
+                  scaffold.showSnackBar(SnackBar(
+                    content: Text(
+                      "Favorite Status Updated!",
+                      textAlign: TextAlign.center,
+                    ), // d widget we want to show in the popup
+                    duration: Duration(
+                        seconds: 2), //how long d popup will show b4 dismiss
+                  ));
+                } catch (error) {
+                  scaffold.hideCurrentSnackBar();
+                  scaffold.showSnackBar(SnackBar(
+                    content: Text(
+                      "Something Went Wrong!",
+                      textAlign: TextAlign.center,
+                    ), // d widget we want to show in the popup
+                    duration: Duration(
+                        seconds: 2), //how long d popup will show b4 dismiss
+                  ));
+                }
+              }), // widget to display b4 the footer title/text
           title: Text(
             title,
             textAlign: TextAlign.center,
