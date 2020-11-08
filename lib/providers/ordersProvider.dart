@@ -2,10 +2,12 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import "package:http/http.dart" as http; // importing the http package as http
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/model/cart.dart';
 import 'package:shop_app/model/order.dart';
 
 class OrderProvider with ChangeNotifier {
+  //Create a secured localStorage
   List<Order> _orders = [];
 
   //ds method return complete list of all orders placed
@@ -15,7 +17,15 @@ class OrderProvider with ChangeNotifier {
 
   //GET
   fetchAndSetOrders() async {
-    final url = "https://fluttershopapp-b1ed5.firebaseio.com/orders.json";
+    var prefs = await SharedPreferences.getInstance();
+    var data = json.decode(prefs.getString('userData')) as Map<String, Object>;
+    var token = data['token'];
+    var userId = data['userId'];
+    // final url = "https://fluttershopapp-b1ed5.firebaseio.com/orders.json?auth=$token";
+
+    // we want to fetch orders only by logged in user
+    final url =
+        "https://fluttershopapp-b1ed5.firebaseio.com/orders/$userId.json?auth=$token";
     try {
       final response = await http.get(url);
       final extractedData = json.decode(response.body) as Map<String, dynamic>;
@@ -49,9 +59,13 @@ class OrderProvider with ChangeNotifier {
   //POST
   // ds method will get a list of cart items and the total amount and then insert it at the beginning of the orders list so recent orders appear first..
   addOrder(List<Cart> cartProducts, double totalAmount) async {
+    var prefs = await SharedPreferences.getInstance();
+    var data = json.decode(prefs.getString('userData')) as Map<String, Object>;
+    var token = data['token'];
+    var userId = data['userId'];
     //Configuring http post request (firebase)
     final url =
-        "https://fluttershopapp-b1ed5.firebaseio.com/orders.json"; // base url + '/orders' (ds creates an order table)
+        "https://fluttershopapp-b1ed5.firebaseio.com/orders/$userId.json?auth=$token"; // adding a new order, we add it under the logged in userId
     //we setting the date time here so there will not be any difference btw the time the order is placed on the server and local..
     final timeOrderWasPlaced = DateTime.now();
     try {

@@ -2,11 +2,14 @@ import 'dart:convert';
 
 import 'package:flutter/material.dart';
 import "package:http/http.dart" as http; // importing the http package as http
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:shop_app/model/httpException.dart';
 import 'package:shop_app/model/product.dart';
 
 //ProductsProvider extends ChangeNotifier
 class ProductsProvider with ChangeNotifier {
+  //Create a secured localStorage
+
   List<Product> _items = [
     /* Product(
         id: 'p1',
@@ -42,13 +45,30 @@ class ProductsProvider with ChangeNotifier {
 //  bool _showFavoriteOnly = false;
 
   //GET
-  fetchAndSetProducts() async {
-    final url =
-        "https://fluttershopapp-b1ed5.firebaseio.com/products.json"; // base url + '/products' (ds creates a product table)
+  fetchAndSetProducts([bool filterByUser = false]) async {
+    var prefs = await SharedPreferences.getInstance();
+    var data = json.decode(prefs.getString('userData')) as Map<String, Object>;
+    var token = data['token'];
+    var userId = data['userId'];
+
+    //if the filterByUser is set to true, we attach the filter product by id params to the url
+    var filterString =
+        filterByUser ? 'orderBy="creatorId"&equalTo="$userId"' : '';
+    var url =
+        'https://fluttershopapp-b1ed5.firebaseio.com/products.json?auth=$token&$filterString'; // ds url is specific to firebase, it fetched product by the given userId ( order the product by creatorId and return only products where the creatorId is equal to the userId)
     try {
       final response = await http.get(url);
       final extractedData = json.decode(response.body)
           as Map<String, dynamic>; // ds returns an array of objects
+      if (extractedData == null) {
+        return;
+      }
+      // we make a second http request to fetch the products added to favorite table for the logged in user
+      url =
+          "https://fluttershopapp-b1ed5.firebaseio.com/userFavorites/$userId.json?auth=$token";
+      final favProductResponse = await http.get(url);
+      // we decode our returned response to an object.. ds will return our product id and favorite value
+      final favoriteProductData = json.decode(favProductResponse.body);
       final List<Product> loadedProducts =
           []; // we init an empty list which will store our returned products later
       //for each object returned, we map the id as our product id and each respective fields
@@ -60,10 +80,15 @@ class ProductsProvider with ChangeNotifier {
             description: prodData['description'],
             imageUrl: prodData['imageurl'],
             price: prodData['price'],
-            isFavorite: prodData['isFavorite']));
+            // d isFavorite status comes from the api call to userFavorites table and it contains key/value pair of the product id (prodId) and d boolean value so we can map it using 'favoriteProductData[prodId]'
+            // we check if the user has not added any product to favorite and set all product to false, else we set the defined boolean value in d db as the isFavorite status of each product.. also if prodId is null we set to false
+            isFavorite: favoriteProductData == null
+                ? false
+                : favoriteProductData[prodId] ?? false));
       });
       // we now set our _items list to the mapped fetched products
       _items = loadedProducts;
+      print("Products response = $extractedData");
       notifyListeners();
     } catch (error) {
       print(error);
@@ -74,9 +99,13 @@ class ProductsProvider with ChangeNotifier {
   // CREATE
   //Re-writing our http request with async..await & try..catch block
   addProduct(Product product) async {
+    var prefs = await SharedPreferences.getInstance();
+    var data = json.decode(prefs.getString('userData')) as Map<String, Object>;
+    var token = data['token'];
+    var userId = data['userId'];
     //Configuring http post request (firebase)
     final url =
-        "https://fluttershopapp-b1ed5.firebaseio.com/products.json"; // base url + '/products' (ds creates a product table)
+        "https://fluttershopapp-b1ed5.firebaseio.com/products.json?auth=$token"; // base url + '/products' (ds creates a product table/object)
     try {
       final response = await http.post(url,
           body: json.encode({
@@ -84,7 +113,7 @@ class ProductsProvider with ChangeNotifier {
             'description': product.description,
             'imageurl': product.imageUrl,
             'price': product.price,
-            'isFavorite': product.isFavorite
+            'creatorId': userId // id of the logged in user dt creates d product
           }));
       print(json.decode(response
           .body)); // ds prints an object  {name: -MKfrdpAK5GEoxYwSFRW}, so we can extract the value using the name key and use it as our id
@@ -94,7 +123,6 @@ class ProductsProvider with ChangeNotifier {
           imageUrl: product.imageUrl,
           description: product.description,
           title: product.title,
-          isFavorite: false,
           id: json.decode(response.body)[
               'name']); // we extract d value of the name key and use it as our id
       _items.add(product); // we add d product here (adds to the end)
@@ -114,8 +142,12 @@ class ProductsProvider with ChangeNotifier {
     var productIndex = _items.indexWhere((product) => product.id == id);
     // if the product cannot be found then its index will be -1
     if (productIndex >= 0) {
+      var prefs = await SharedPreferences.getInstance();
+      var data =
+          json.decode(prefs.getString('userData')) as Map<String, Object>;
+      var token = data['token'];
       final url =
-          "https://fluttershopapp-b1ed5.firebaseio.com/products/$id.json"; // d firebase url for a given product id
+          "https://fluttershopapp-b1ed5.firebaseio.com/products/$id.json?auth=$token"; // d firebase url for a given product id
       await http.patch(url,
           body: json.encode({
             'title': newProduct.title,
@@ -134,7 +166,11 @@ class ProductsProvider with ChangeNotifier {
   //DELETE
   //ds method delete a product from the list and on the server
   deleteProduct(String id) async {
-    final url = "https://fluttershopapp-b1ed5.firebaseio.com/products/$id.json";
+    var prefs = await SharedPreferences.getInstance();
+    var data = json.decode(prefs.getString('userData')) as Map<String, Object>;
+    var token = data['token'];
+    final url =
+        "https://fluttershopapp-b1ed5.firebaseio.com/products/$id.json?auth=$token";
     // we copy the index of the product to be deleted
     final existingProductIndex =
         _items.indexWhere((product) => product.id == id);
@@ -170,10 +206,22 @@ class ProductsProvider with ChangeNotifier {
     existingProduct.isFavorite = !existingProduct.isFavorite;
     // notify all subscribers of the change
     notifyListeners();
+    var prefs = await SharedPreferences.getInstance();
+    var data = json.decode(prefs.getString('userData')) as Map<String, Object>;
+    var token = data['token'];
+    var userId = data['userId'];
+    // final url = "https://fluttershopapp-b1ed5.firebaseio.com/products/$id.json?auth=$token";
+    // we change the url of id to a new one dt includes d id of the authenticated user so each user will have unique api for favorites products
+
+    /*
+    "https://fluttershopapp-b1ed5.firebaseio.com/userFavorites/$userId/$id.json : - creates a 'userFavorites' object/table, inside the object, create a another object with the userId, the object contains the product user has added to favorite (the product id as property and the value passed to this request
+    */
+
     final url =
-        "https://fluttershopapp-b1ed5.firebaseio.com/products/$id.json"; // d firebase url for a given product id
-    var response = await http.patch(url,
-        body: json.encode({'isFavorite': !existingProductFavoriteStatus}));
+        "https://fluttershopapp-b1ed5.firebaseio.com/userFavorites/$userId/$id.json?auth=$token";
+    var response =
+        await http.put(url, body: json.encode(existingProduct.isFavorite));
+    // var response = await http.patch(url, body: json.encode({'isFavorite': !existingProductFavoriteStatus}));
     notifyListeners();
     if (response.statusCode >= 400) {
       // if the server deletion fails, we revert the isFavorite status of the product
@@ -186,19 +234,8 @@ class ProductsProvider with ChangeNotifier {
 
   // This method is a getter that we call to retrieve list of products in the store
   List<Product> getProducts() {
-    // if showFac=vOnly has been toggle to false, we show only favorite products
-//    if (_showFavoriteOnly) {
-//      return _items.where((item) => item.isFavorite).toList();
-//    }
-    // else we return all products
     return _items;
   }
-
-  //ds method set the showFavoriteOnly property to true/false
-/*  void toggleShowFavoriteOnly(bool value) {
-    _showFavoriteOnly = value;
-    notifyListeners();
-  }*/
 
   // return only favorite products
   List<Product> favoriteItems() {

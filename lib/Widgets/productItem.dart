@@ -31,9 +31,18 @@ class ProductItem extends StatelessWidget {
             Navigator.of(context)
                 .pushNamed(ProductDetailScreen.routeName, arguments: id);
           },
-          child: Image.network(
-            imageUrl, // d image link
-            fit: BoxFit.cover, // we make our image have css cover attribute
+          child:
+              // we will b using the image for hero animation on d product detail page so we wrap d image with hero and gv it a tag (a unique id selector we can use to select it from d other component)
+              Hero(
+            tag: id,
+            child: FadeInImage(
+              placeholder: AssetImage("lib/assets/images/loader.gif"),
+              image: NetworkImage(imageUrl),
+              /* child: Image.network(
+                imageUrl, // d image link
+                fit: BoxFit.cover, // we make our image have css cover attribute
+              ),*/
+            ),
           ),
         ),
         footer: GridTileBar(

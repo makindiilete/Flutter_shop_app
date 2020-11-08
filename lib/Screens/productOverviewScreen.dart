@@ -11,6 +11,8 @@ import 'package:shop_app/providers/productsProvider.dart';
 enum FilterOptions { Favorites, All }
 
 class ProductsOverviewScreen extends StatefulWidget {
+  static const routeName = '/shop';
+
   @override
   _ProductsOverviewScreenState createState() => _ProductsOverviewScreenState();
 }
@@ -21,7 +23,7 @@ class _ProductsOverviewScreenState extends State<ProductsOverviewScreen> {
   var _isLoading = false;
 
   @override
-  void didChangeDependencies() {
+  didChangeDependencies() {
     // load d products only when d component first loads
     if (_isInit) {
       setState(() {

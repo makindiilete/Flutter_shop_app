@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'package:intl/intl.dart';
-import 'package:money2/money2.dart';
 import 'package:provider/provider.dart';
 import 'package:shop_app/providers/productsProvider.dart';
 
@@ -19,37 +17,39 @@ class ProductDetailScreen extends StatelessWidget {
         .findById(
             productId); // 'listen: false' is added in other to tell ds component not to listen to any product change, because we definitely have nothing inside the details screen we will want to change when the product details screen is rendered, so make it stop listening to the store change, default is 'true' which is not required if its true
 
-    final nigeriaNaira =
-        new NumberFormat.currency(locale: "en_NG", symbol: "₦");
-
-    final Currency naira =
-        Currency.create('NGN', 0, symbol: '₦', pattern: 'S0');
-    Money nairaPrice = Money.fromInt(1099, naira);
-
     return Scaffold(
-      appBar: AppBar(
+/*      appBar: AppBar(
         title: Text(loadedProduct
             .title), // from d 'loadedProduct' we can now get the title of the tapped product and render it in d appBar of the productDetailScreen
-      ),
-      body: SingleChildScrollView(
-        child: Column(
-          children: <Widget>[
-            Container(
-              height: 300,
-              width: double
-                  .infinity, // d container sud take the full available width
-              child: Image.network(
-                loadedProduct.imageUrl,
-                fit: BoxFit.cover,
+      ),*/
+      body: CustomScrollView(
+        // slivers : - Scrollable parts of the screen
+        slivers: <Widget>[
+          //pinned : true // fixed top
+          SliverAppBar(
+            expandedHeight: 300,
+            pinned: true,
+            flexibleSpace: FlexibleSpaceBar(
+              title: Text(loadedProduct.title),
+              background: Hero(
+                tag: loadedProduct.id,
+                child: Image.network(
+                  loadedProduct.imageUrl,
+                  fit: BoxFit.cover,
+                ),
               ),
             ),
+          ),
+          SliverList(
+              delegate: SliverChildListDelegate([
             SizedBox(
               height: 20,
             ),
 //            Text("$Money.from(loadedProduct.price, naira)",
             Text(
-              "${Money.from(loadedProduct.price, naira)}",
+              '\u20A6${loadedProduct.price}',
               style: TextStyle(color: Colors.grey, fontSize: 20),
+              textAlign: TextAlign.center,
             ),
             SizedBox(
               height: 10,
@@ -62,9 +62,12 @@ class ProductDetailScreen extends StatelessWidget {
                 textAlign: TextAlign.center,
                 softWrap: true,
               ),
-            )
-          ],
-        ),
+            ),
+            SizedBox(
+              height: 800,
+            ),
+          ])),
+        ],
       ),
     );
   }
