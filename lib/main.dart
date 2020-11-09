@@ -49,7 +49,7 @@ class MaterialWidget extends StatefulWidget {
 }
 
 class _MaterialWidgetState extends State<MaterialWidget> {
-  bool _isAuth = false;
+  bool _isAuth;
   bool _isInit = true;
 
   @override
@@ -68,7 +68,9 @@ class _MaterialWidgetState extends State<MaterialWidget> {
 
   @override
   Widget build(BuildContext context) {
-    print("_isInit = $_isInit And _isAuth = $_isAuth");
+    // print("_isInit = $_isInit And _isAuth = $_isAuth");
+    final authStatus = Provider.of<AuthProvider>(context).isAuthenticated;
+    print("auth status from main = $authStatus");
     // verifyAuth(context);
     return MaterialApp(
       debugShowCheckedModeBanner: false,
@@ -82,13 +84,9 @@ class _MaterialWidgetState extends State<MaterialWidget> {
             TargetPlatform.android: CustomPageTransitionBuilder(),
             TargetPlatform.iOS: CustomPageTransitionBuilder(),
           })),
-      home: _isInit
-          ? Center(
-              child: CircularProgressIndicator(),
-            )
-          :
+      home:
           //if d user is authenticated we return d shop screen
-          _isAuth
+          authStatus
               ? ProductsOverviewScreen()
               : AuthScreen(), // we make our authScreen our home...
       routes: {

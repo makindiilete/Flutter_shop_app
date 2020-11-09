@@ -217,11 +217,13 @@ class _AuthCardState extends State<AuthCard>
         // Log user in
         await Provider.of<AuthProvider>(context)
             .signIn(_authData['email'], _authData['password']);
+        Provider.of<AuthProvider>(context).updateAuthStatus(true);
         // on successful sign-in, we navigate user to the productOverviewScreen
         Navigator.of(context).pushNamed("/shop");
       } else {
         await Provider.of<AuthProvider>(context)
             .signUp(_authData['email'], _authData['password']);
+        Provider.of<AuthProvider>(context).updateAuthStatus(true);
         // on successful sign-in, we navigate user to the productOverviewScreen
         Navigator.of(context).pushNamed("/shop");
         // Sign user up

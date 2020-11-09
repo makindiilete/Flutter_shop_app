@@ -23,11 +23,19 @@ class AuthProvider with ChangeNotifier {
     print("Gotten token = $token");
     //if d getToken method does not return null
     if (token != null) {
-      print("You are auth");
+      print("auth method called and saying You are auth");
+      updateAuthStatus(true);
       return true;
     }
-    print("You are not auth");
+    print("auth method called and saying You are not auth");
+    updateAuthStatus(false);
     return false;
+  }
+
+  updateAuthStatus(bool value) {
+    isAuthenticated = value;
+    print("updateAuthStatus of authProvider line 37 set to $value");
+    notifyListeners();
   }
 
   Future<String> getUserEmail() async {
